@@ -75,3 +75,38 @@ if generate:
 
     # (Optional) save to a local DB
     # log_caption(caption, hashtags)
+import streamlit as st
+from watson_caption import generate_caption
+from image_captioner import get_image_description
+import os
+import tempfile
+
+st.title("AI Instagram Caption Assistant")
+
+uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+user_text = st.text_input("Optional: Describe the context (e.g. 'sunrise during trip')")
+
+if st.button("Generate Caption"):
+    if uploaded_image:
+        # Save image temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
+            tmp_file.write(uploaded_image.read())
+            image_path = tmp_file.name
+
+        # Generate image description
+        st.write("Analyzing image...")
+        image_caption = get_image_description(image_path)
+        st.success(f"Image Description: {image_caption}")
+
+        # Combine prompt
+        final_prompt = f"Generate an engaging Instagram caption based on this scene: {image_caption}."
+        if user_text:
+            final_prompt += f" The user adds: {user_text}."
+
+        st.write("Sending prompt to Watsonx.ai...")
+        caption = generate_caption(final_prompt)
+        st.subheader("Generated Caption:")
+        st.write(caption)
+    else:
+        st.error("Please upload an image first.")
+
